@@ -1,32 +1,67 @@
 "use strict"
+var csv = require("basic-csv");
+var fs = require('fs');
+var faker = require('./faker');
+var list = []
+var file = "people.csv"
 
-class Person {
-  // Look at the above CSV file
-  // What attributes should a Person object have?
-}
+csv.readCSV("people.csv", {
+  dropHeader: true
+}, function (error, rows) {
 
-class PersonParser {
-
-  constructor(file) {
-    this._file = file
-    this._people = null
+  class Person {
+    constructor(rows) {
+      this._people = rows
+    }
   }
 
-  get people() {
-    // If we've already parsed the CSV file, don't parse it again
-    // Remember: people is null by default
-    if (this._people)
-      return this._people
+  class PersonParser {
+    constructor(file) {
+      this._file = file
+      this._people = rows
+      this._new_people = ""
+      this._new_people_count = 0
+    }
 
-    // We've never called people before, now parse the CSV file
-    // and return an Array of Person objects here
-    // Save the Array in the people instance variable.
+    get people() {
+      if (this._people)
+        return this._people
+    }
+
+    addPerson(first_name, last_name, email, phone, created_at) {
+      let date = new Date(created_at)
+      this._new_people += (this._people.length + this._new_people_count + 1) + "," +  first_name + "," + last_name + "," + email + "," + phone + "," + date + "\n"
+      this._new_people_count++
+    }
+
+    save() {
+      let data = this._new_people
+      fs.appendFile(file, data, function(err) {
+        if (err) throw 'error writing file: ' + err;
+      });
+
+      console.log(`Added ${this._new_people_count + 1} rows of data into ${this._file}.`)
+      this._new_people_count = 0
+    }
+
+    addFakeData(n) {
+      for (var i = 0; i < n; i++) {
+        this._new_people += (this._people.length + this._new_people_count + 1) + "," +  first_name + "," + last_name + "," + email + "," + phone + "," + date + "\n"
+        this._new_people_count++
+      }
+    }
   }
 
-  addPerson() {}
+  // Initiate parser
+  let parser = new PersonParser(file)
 
-}
+  parser.addPerson("Fadhli","Ramadhani","fadhli@gmail.com","1-633-389-7173","2012-05-10T03:53:40-07:00")
+  parser.addPerson("Fadhli","Ramadhani","fadhli@gmail.com","1-633-389-7173","2012-05-10T03:53:40-07:00")
+  parser.addPerson("Fadhli","Ramadhani","fadhli@gmail.com","1-633-389-7173","2012-05-10T03:53:40-07:00")
+  parser.addPerson("Fadhli","Ramadhani","fadhli@gmail.com","1-633-389-7173","2012-05-10T03:53:40-07:00")
 
-let parser = new PersonParser('people.csv')
+  parser.save()
 
-console.log(`There are ${parser.people.size} people in the file '${parser.file}'.`)
+  console.log(`There are ${parser._people.length + parser._new_people_count} people in the file '${parser._file}'.`)
+
+});
